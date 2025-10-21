@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 ID Verification System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
+            color: #BBE1FA;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(15, 76, 117, 0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #3282B8;
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            color: #BBE1FA;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            background: rgba(22, 33, 62, 0.8);
+            border: 2px solid #0F4C75;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .tab:hover {
+            background: #0F4C75;
+            transform: translateY(-2px);
+        }
+        
+        .tab.active {
+            background: #3282B8;
+            border-color: #3282B8;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(22, 33, 62, 0.8);
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 4px solid #3282B8;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #0F4C75;
+        }
+        
+        .stat-label {
+            font-size: 1em;
+            color: #BBE1FA;
+            margin-top: 5px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: #0F4C75;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #3282B8;
+            transform: scale(1.05);
+        }
+        
+        .btn-success {
+            background: #27AE60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .btn-danger {
+            background: #E74C3C;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #C0392B;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #BBE1FA;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: rgba(22, 33, 62, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            animation: slideIn 0.5s ease;
+            transition: all 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(50, 130, 184, 0.3);
+        }
+        
+        .card.granted {
+            border-left: 4px solid #27AE60;
+        }
+        
+        .card.denied {
+            border-left: 4px solid #E74C3C;
+        }
+        
+        .card.not-registered {
+            border-left: 4px solid #F39C12;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #BBE1FA;
+        }
+        
+        .status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status.granted {
+            background: #27AE60;
+            color: white;
+        }
+        
+        .status.denied {
+            background: #E74C3C;
+            color: white;
+        }
+        
+        .status.not-registered {
+            background: #F39C12;
+            color: white;
+        }
+        
+        .status.active {
+            background: #27AE60;
+            color: white;
+        }
+        
+        .status.blocked {
+            background: #E74C3C;
+            color: white;
+        }
+        
+        .card-info {
+            margin: 10px 0;
+            color: #3282B8;
+        }
+        
+        .match-score {
+            margin-top: 10px;
+        }
+        
+        .score-bar {
+            width: 100%;
+            height: 8px;
+            background: #16213E;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #E74C3C, #F39C12, #27AE60);
+            transition: width 0.5s ease;
+        }
+        
+        .timestamp {
+            font-size: 0.9em;
+            color: #6C7A89;
+            margin-top: 10px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6C7A89;
+            font-size: 1.2em;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 ESP32 ID Verification System</h1>
+            <p class="subtitle" id="welcomeMessage">Secure Access Control with Face Recognition</p>
+            <button class="btn-danger" onclick="logout()" style="margin-top: 15px;">🚪 Logout</button>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalUsers">0</div>
+                <div class="stat-label">👥 Registered Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalVerifications">0</div>
+                <div class="stat-label">📊 Total Verifications</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="grantedCount">0</div>
+                <div class="stat-label">✅ Access Granted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="deniedCount">0</div>
+                <div class="stat-label">❌ Access Denied</div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-section="verifications" onclick="switchTab(this)">📋 Verification Logs</div>
+            <div class="tab" data-section="users" onclick="switchTab(this)">👥 Registered Users</div>
+            <div class="tab" data-section="granted" onclick="switchTab(this)">✅ Granted Access</div>
+            <div class="tab" data-section="denied" onclick="switchTab(this)">❌ Denied Access</div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn-primary" onclick="loadData()">🔄 Refresh</button>
+        </div>
+        
+        <!-- Verification Logs Section -->
+        <div id="verifications" class="section active">
+            <h2 class="section-title">📋 Recent Verification Attempts</h2>
+            <div id="verificationsGrid" class="grid"></div>
+        </div>
+        
+        <!-- Registered Users Section -->
+        <div id="users" class="section">
+            <h2 class="section-title">👥 Registered Users</h2>
+            <div id="usersGrid" class="grid"></div>
+        </div>
+        
+        <!-- Granted Access Section -->
+        <div id="granted" class="section">
+            <h2 class="section-title">✅ Granted Access History</h2>
+            <div id="grantedGrid" class="grid"></div>
+        </div>
+        
+        <!-- Denied Access Section -->
+        <div id="denied" class="section">
+            <h2 class="section-title">❌ Denied Access History</h2>
+            <div id="deniedGrid" class="grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+        
+        // ========== AUTHENTICATION CHECK ==========
+        
+        const loggedInUser = sessionStorage.getItem('loggedInUser');
+        const fullName = sessionStorage.getItem('fullName');
+        
+        if (!loggedInUser) {
+            window.location.href = '/login.html';
+        } else {
+            document.getElementById('welcomeMessage').textContent = `Welcome, ${fullName || loggedInUser}! 👋`;
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.clear();
+                window.location.href = '/login.html';
+            }
+        }
+        
+        // ========== TAB SWITCHING ==========
+        
+        function switchTab(clickedTab) {
+            const sectionName = clickedTab.getAttribute('data-section');
+            
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(sectionName).classList.add('active');
+            clickedTab.classList.add('active');
+            
+            loadData();
+        }
+        
+        // ========== DATA LOADING ==========
+        
+        async function loadData() {
+            try {
+                const [users, verifications, granted, denied] = await Promise.all([
+                    fetch(`${API_URL}/users`).then(r => r.json()),
+                    fetch(`${API_URL}/verifications`).then(r => r.json()),
+                    fetch(`${API_URL}/verifications/granted`).then(r => r.json()),
+                    fetch(`${API_URL}/verifications/denied`).then(r => r.json())
+                ]);
+                
+                document.getElementById('totalUsers').textContent = users.length;
+                document.getElementById('totalVerifications').textContent = verifications.length;
+                document.getElementById('grantedCount').textContent = granted.length;
+                document.getElementById('deniedCount').textContent = denied.length;
+                
+                displayVerifications(verifications);
+                displayUsers(users);
+                displayGranted(granted);
+                displayDenied(denied);
+                
+                console.log('✅ Data loaded successfully');
+                
+            } catch (error) {
+                console.error('❌ Error loading data:', error);
+            }
+        }
+        
+        function displayVerifications(verifications) {
+            const container = document.getElementById('verificationsGrid');
+            
+            if (verifications.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 No verification attempts yet</div>';
+                return;
+            }
+            
+            container.innerHTML = verifications.map(v => `
+                <div class="card ${v.verificationStatus.toLowerCase().replace('_', '-')}">
+                    <div class="card-header">
+                        <div class="name">👤 ${v.name}</div>
+                        <div class="status ${v.verificationStatus.toLowerCase().replace('_', '-')}">${v.verificationStatus}</div>
+                    </div>
+                    <div class="card-info">🆔 ID: ${v.idNumber}</div>
+                    <div class="match-score">
+                        <div>⭐ Match Score: ${(v.faceMatchScore * 100).toFixed(1)}%</div>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: ${v.faceMatchScore * 100}%"></div>
+                        </div>
+                    </div>
+                    <div class="timestamp">⏰ ${new Date(v.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+        
+        function displayUsers(users) {
+            const container = document.getElementById('usersGrid');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<div class="empty-state">👥 No users registered yet</div>';
+                return;
+            }
+            
+            container.innerHTML = users.map(u => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="name">👤 ${u.name}</div>
+                        <div class="status ${u.status.toLowerCase()}">${u.status}</div>
+                    </div>
+                    <div class="card-info">🆔 ID: ${u.idNumber}</div>
+                    <div class="card-info">📧 ${u.email || 'No email'}</div>
+                    <div class="card-info">🏢 ${u.department || 'No department'}</div>
+                    <div class="timestamp">📅 Registered: ${new Date(u.registeredAt).toLocaleDateString()}</div>
+                    <div class="user-actions">
+                        ${u.status === 'ACTIVE' ? 
+                            `<button class="btn-danger btn-small" onclick="blockUser('${u.idNumber}')">🚫 Block</button>` :
+                            `<button class="btn-success btn-small" onclick="activateUser('${u.idNumber}')">✅ Activate</button>`
+                        }
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function displayGranted(granted) {
+            const container = document.getElementById('grantedGrid');
+            
+            if (granted.length === 0) {
+                container.innerHTML = '<div class="empty-state">✅ No granted access yet</div>';
+                return;
+            }
+            
+            container.innerHTML = granted.map(v => `
+                <div class="card granted">
+                    <div class="card-header">
+                        <div class="name">👤 ${v.name}</div>
+                        <div class="status granted">GRANTED</div>
+                    </div>
+                    <div class="card-info">🆔 ID: ${v.idNumber}</div>
+                    <div class="match-score">
+                        <div>⭐ Match Score: ${(v.faceMatchScore * 100).toFixed(1)}%</div>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: ${v.faceMatchScore * 100}%"></div>
+                        </div>
+                    </div>
+                    <div class="timestamp">⏰ ${new Date(v.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+        
+        function displayDenied(denied) {
+            const container = document.getElementById('deniedGrid');
+            
+            if (denied.length === 0) {
+                container.innerHTML = '<div class="empty-state">❌ No denied access yet</div>';
+                return;
+            }
+            
+            container.innerHTML = denied.map(v => `
+                <div class="card denied">
+                    <div class="card-header">
+                        <div class="name">👤 ${v.name}</div>
+                        <div class="status denied">DENIED</div>
+                    </div>
+                    <div class="card-info">🆔 ID: ${v.idNumber}</div>
+                    <div class="match-score">
+                        <div>⭐ Match Score: ${(v.faceMatchScore * 100).toFixed(1)}%</div>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: ${v.faceMatchScore * 100}%"></div>
+                        </div>
+                    </div>
+                    <div class="timestamp">⏰ ${new Date(v.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+        
+        async function blockUser(idNumber) {
+            if (confirm(`Block user ${idNumber}?`)) {
+                try {
+                    await fetch(`${API_URL}/users/${idNumber}/block`, { method: 'PUT' });
+                    alert('✅ User blocked successfully');
+                    loadData();
+                } catch (error) {
+                    alert('❌ Failed to block user');
+                }
+            }
+        }
+        
+        async function activateUser(idNumber) {
+            if (confirm(`Activate user ${idNumber}?`)) {
+                try {
+                    await fetch(`${API_URL}/users/${idNumber}/activate`, { method: 'PUT' });
+                    alert('✅ User activated successfully');
+                    loadData();
+                } catch (error) {
+                    alert('❌ Failed to activate user');
+                }
+            }
+        }
+        
+        setInterval(loadData, 5000);
+        loadData();
+    </script>
+</body>
+</html>
